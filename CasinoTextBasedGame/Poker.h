@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "Main.h"
 
 //================== Game Definition ==================//
@@ -29,7 +29,7 @@ private:
 		}
 	}
 
-	// Evaluate the hand strength (0–9)
+	// Evaluate the hand strength (0ï¿½9)
 	int evaluateHand(const std::vector<Card>& hand) const {
 		std::vector<int> values;
 		std::vector<Card::Suit> suits;
@@ -56,7 +56,7 @@ private:
 		for (const auto& kv : valueCount) {
 			if (kv.second == 4) fourKind = true;
 			if (kv.second == 3) threeKind = true;
-			if (kv.second == 2) pair = !pair ? true: (twopair = true, true);
+			if (kv.second == 2) pair = !pair ? true : (twopair = true, true);
 		}
 		if (isStraight && isFlush && values.back() == 14) return 9; // Royal Flush
 		if (isStraight && isFlush) return 8; // Straight Flush
@@ -85,8 +85,8 @@ public:
 			std::cout << "\n";
 		}
 	}
-	void playGame() {
-		std::cout << "\n == Welcome to Poker! ===\n";
+	void play() {
+		drawAsciiBox("=== Welcome to Poker! ===\n");
 		deck.shuffle();
 		players.assign(numPlayers, std::vector<Card>());
 
@@ -122,7 +122,7 @@ public:
 
 		std::cout << "\nYour new Hand:\n";
 		displayCards(players[0]);
-		
+
 		// --- Opponents Hands ---
 		for (int p = 1; p < numPlayers; ++p) {
 			int discards = rand() % 3; // Discard 0-2 cards
@@ -133,10 +133,10 @@ public:
 		}
 
 		// --- Show Opponents Hands and Determine Winner ---
-		std::vector<std::string> handRanks = { 
-			"High Card", "Pair", "Two Pair", "Three of a Kind", "Straight", "Flush", "Full House", "Four of a Kind", "Straight Flush", "Royal Flush" 
+		std::vector<std::string> handRanks = {
+			"High Card", "Pair", "Two Pair", "Three of a Kind", "Straight", "Flush", "Full House", "Four of a Kind", "Straight Flush", "Royal Flush"
 		};
-		
+
 		std::vector<int> handValues;
 		for (int p = 0; p < numPlayers; ++p) {
 			handValues.push_back(evaluateHand(players[p]));
@@ -144,18 +144,33 @@ public:
 		int best = *std::max_element(handValues.begin(), handValues.end());
 		int winningValue = std::distance(handValues.begin(), std::find(handValues.begin(), handValues.end(), best));
 
-		std::cout << "\n=== Showdown ===\n";
+		drawAsciiBox("=== Game Results ===\n");
 		for (int p = 0; p < numPlayers; ++p) {
 			if (p == 0)
 				std::cout << "\nYour Hand:\n";
 			else
 				std::cout << "\nOppnents " << p + 1 << "'s Hand:\n";
 			displayCards(players[p]);
-			std::cout << "Hand Rank: " << handRanks[handValues[p]] << "\n\n";
+			drawAsciiBox("Hand Rank: " + handRanks[handValues[p]] + "\n");
 		}
 		if (winningValue == 0)
-			std::cout << "You win with a " << handRanks[handValues[winningValue]] << "!\n";
+			drawAsciiBox("Congratulations! You win with a " + handRanks[handValues[winningValue]] + "!\n");
 		else
-			std::cout << "Opponent " << winningValue + 1 << " wins with a " << handRanks[handValues[winningValue]] << "!\n";
+			drawAsciiBox("Opponent " + std::to_string(winningValue + 1) + " wins with a " + handRanks[handValues[winningValue]] + ". Better luck next time!\n");
+	}
+	// ------------------ Wallet Integration ------------------
+	bool playWithBet(int bet) {
+		play(); // Play normally
+
+		// Determine if player wins
+		std::vector<int> handValues;
+		for (int p = 0; p < numPlayers; ++p)
+			handValues.push_back(evaluateHand(players[p]));
+
+		int best = *std::max_element(handValues.begin(), handValues.end());
+		int winningPlayerIndex = std::distance(handValues.begin(),
+			std::find(handValues.begin(), handValues.end(), best));
+
+		return winningPlayerIndex == 0; // true if player wins
 	}
 };

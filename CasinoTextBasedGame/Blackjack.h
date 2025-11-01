@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "Main.h"
+
 
 //================== Hand Definition ==================//
 //------Hand class representing a player's hand-------//
@@ -71,125 +72,153 @@ public:
 //------game class representing the games logic-------//
 class Blackjack {
 private:
-	Deck deck;
-	Hand playerHand;
-	Hand dealerHand;
+    Deck deck;
+    Hand playerHand;
+    Hand dealerHand;
+
 public:
-	Blackjack() {
-		deck.shuffle();
-	}
-	void startNewRound() {
-		playerHand.clear();
-		dealerHand.clear();
-		playerHand.addCard(deck.dealCard());
-		dealerHand.addCard(deck.dealCard());
-		playerHand.addCard(deck.dealCard());
-		dealerHand.addCard(deck.dealCard());
-	}
-	void play() {
-		std::cout << "\n=== Welcome to Blackjack! ===\n";
+    void startNewRound() {
+        playerHand.clear();
+        dealerHand.clear();
+        deck.shuffle();
+        playerHand.addCard(deck.dealCard());
+        dealerHand.addCard(deck.dealCard());
+        playerHand.addCard(deck.dealCard());
+        dealerHand.addCard(deck.dealCard());
+    }
 
-		startNewRound();
-		
-		playerHand = Hand();
-		dealerHand = Hand();
+    void play() {
+        drawAsciiBox("=== Welcome to Blackjack! ===\n");
 
-		playerHand.addCard(deck.dealCard());
-		dealerHand.addCard(deck.dealCard());
-		playerHand.addCard(deck.dealCard());
-		dealerHand.addCard(deck.dealCard());
+        startNewRound();
 
-		if (playerHand.isBlackjack() || dealerHand.isBlackjack()) {
-			std::cout << "Checking for Blackjack...\n";
-			dealerHand.displayHand();
-			if (playerHand.isBlackjack() && dealerHand.isBlackjack()) {
-				std::cout << "Both player and dealer have Blackjack! It's a push.\n";
-			}
-			else if (playerHand.isBlackjack()) {
-				std::cout << "Player has Blackjack! Player wins!\n";
-			}
-			else {
-				std::cout << "Dealer has Blackjack! Dealer wins!\n";
-			}
-			return;
-		}
+        // Player turn
+        playerTurn();
+        if (playerHand.isBust()) {
+            showHands(false);
+            drawAsciiBox("Player busts! Dealer wins!\n");
+            return;
+        }
 
-		playerTurn();
-		if (playerHand.isBust()) {
-			std::cout << "Player busts! Dealer wins!\n";
-			return;
-		}
+        // Dealer turn
+        dealerTurn();
+        if (dealerHand.isBust()) {
+            showHands(false);
+            drawAsciiBox("Dealer busts! Player wins!\n");
+            return;
+        }
 
-		dealerTurn();
-		if (dealerHand.isBust()) {
-			std::cout << "Dealer busts! Player wins!\n";
-			return;
-		}
-		showHands(false);
-		determineWinner();
-	}
+        // Show final hands and determine winner
+        showHands(false);
+        determineWinner();
+    }
+
+    // ------------------ Wallet Integration ------------------
+    bool playWithBet(int bet) {
+        startNewRound();
+
+        // Player turn
+        playerTurn();
+        if (playerHand.isBust()) {
+            showHands(false);
+            drawAsciiBox("Player busts! Dealer wins!\n");
+            return false; // player lost
+        }
+
+        // Dealer turn
+        dealerTurn();
+        if (dealerHand.isBust()) {
+            showHands(false);
+            drawAsciiBox("Dealer busts! Player wins!\n");
+            return true; // player won
+        }
+
+        // Final comparison
+        int playerValue = playerHand.getValue();
+        int dealerValue = dealerHand.getValue();
+
+        showHands(false);
+
+        if (playerValue > dealerValue) {
+            drawAsciiBox("Player wins with " + std::to_string(playerValue) + " against dealer's " + std::to_string(dealerValue) + "!\n");
+            return true;
+        }
+        else if (playerValue < dealerValue) {
+            drawAsciiBox("Dealer wins with " + std::to_string(dealerValue) + " against player's " + std::to_string(playerValue) + "!\n");
+            return false;
+        }
+        else {
+            drawAsciiBox("It's a push! Both player and dealer have " + std::to_string(playerValue) + "!\n");
+            return false; // tie treated as no coins lost, can adjust if needed
+        }
+    }
+
 private:
-	void showHands(bool hideDealerFirstCard) const {
-		std::cout << "\nDealer's Hand:\n";
-		dealerHand.displayHand(hideDealerFirstCard);
-		if (!hideDealerFirstCard) {
-			std::cout << "Dealer's Hand Value: " << dealerHand.getValue() << "\n";
-		}
-		std::cout << "\nPlayer's Hand:\n";
-		playerHand.displayHand();
-		std::cout << "Player's Hand Value: " << playerHand.getValue() << "\n";
-	}
-	void playerTurn() {
-		char choice;
-		do {
-			showHands(true);
-			std::cout << "Do you want to (h)it or (s)tand? ";
-			std::cin >> choice;
-			if (choice == 'h' || choice == 'H') {
-				playerHand.addCard(deck.dealCard());
-				if (playerHand.isBust()) {
-					showHands(false);
-					return;
-				}
-			}
-			if (choice != 'h' && choice != 'H' && choice != 's' && choice != 'S') {
-				std::cout << "Invalid choice. Please enter 'h' to hit or 's' to stand.\n";
-			}
-			if (playerHand.canSplit()) {
-				char splitChoice;
-				std::cout << "You have a pair! Do you want to split? (y/n): ";
-				std::cin >> splitChoice;
-				if (splitChoice == 'y' || splitChoice == 'Y') {
-					Hand newHand;
-					playerHand.split(newHand);
-					playerHand.addCard(deck.dealCard());
-					newHand.addCard(deck.dealCard());
-					std::cout << "First Hand:\n";
-					playerHand.displayHand();
-					std::cout << "Second Hand:\n";
-					newHand.displayHand();
-				}
-			}
-		} while (choice != 's' && choice != 'S');
-	}
-	void dealerTurn() {
-		std::cout << "\nDealer's turn...\n";
-		showHands(true);
-		while (dealerHand.getValue() < 17) {
-			dealerHand.addCard(deck.dealCard());
-		}
-	}
-	void determineWinner() const {
-		int playerValue = playerHand.getValue();
-		int dealerValue = dealerHand.getValue();
-		if (playerValue > dealerValue) {
-			std::cout << "Player wins with " << playerValue << " against dealer's " << dealerValue << "!\n";
-		}
-		else if (playerValue < dealerValue) {
-			std::cout << "Dealer wins with " << dealerValue << " against player's " << playerValue << "!\n";
-		}
-		else {
-			std::cout << "It's a push with both at " << playerValue << "!\n";
-		}
-	}
+    void showHands(bool hideDealerFirstCard) const {
+        std::cout << "\nDealer's Hand:\n";
+        dealerHand.displayHand(hideDealerFirstCard);
+        if (!hideDealerFirstCard) {
+            std::cout << "Dealer's Hand Value: " << dealerHand.getValue() << "\n";
+        }
+        std::cout << "\nPlayer's Hand:\n";
+        playerHand.displayHand();
+        std::cout << "Player's Hand Value: " << playerHand.getValue() << "\n";
+    }
+
+    void playerTurn() {
+        char choice;
+        do {
+            showHands(true);
+            std::cout << "Do you want to (h)it or (s)tand? ";
+            std::cin >> choice;
+            if (choice == 'h' || choice == 'H') {
+                playerHand.addCard(deck.dealCard());
+                if (playerHand.isBust()) {
+                    showHands(false);
+                    return;
+                }
+            }
+            if (choice != 'h' && choice != 'H' && choice != 's' && choice != 'S') {
+                std::cerr << "[!] ERROR: Invalid choice. Please enter 'h' to hit or 's' to stand.\n";
+            }
+
+            if (playerHand.canSplit()) {
+                char splitChoice;
+                std::cout << "You have a pair! Do you want to split? (y/n): ";
+                std::cin >> splitChoice;
+                if (splitChoice == 'y' || splitChoice == 'Y') {
+                    Hand newHand;
+                    playerHand.split(newHand);
+                    playerHand.addCard(deck.dealCard());
+                    newHand.addCard(deck.dealCard());
+                    std::cout << "First Hand:\n";
+                    playerHand.displayHand();
+                    std::cout << "Second Hand:\n";
+                    newHand.displayHand();
+                }
+            }
+        } while (choice != 's' && choice != 'S');
+    }
+
+    void dealerTurn() {
+        std::cout << "\nDealer's turn...\n";
+        showHands(true);
+        while (dealerHand.getValue() < 17) {
+            dealerHand.addCard(deck.dealCard());
+        }
+    }
+
+    void determineWinner() const {
+        int playerValue = playerHand.getValue();
+        int dealerValue = dealerHand.getValue();
+        if (playerValue > dealerValue) {
+            drawAsciiBox("Player wins with " + std::to_string(playerValue) + " against dealer's " + std::to_string(dealerValue) + "!\n");
+        }
+        else if (playerValue < dealerValue) {
+            drawAsciiBox("Dealer wins with " + std::to_string(dealerValue) + " against player's " + std::to_string(playerValue) + "!\n");
+        }
+        else {
+            drawAsciiBox("It's a push! Both player and dealer have " + std::to_string(playerValue) + "!\n");
+        }
+    }
 };

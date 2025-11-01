@@ -126,9 +126,12 @@
     <ClCompile Include="CasinoTextBasedGame.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Baccarat.h" />
     <ClInclude Include="Blackjack.h" />
+    <ClInclude Include="HighLow.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Poker.h" />
+    <ClInclude Include="Slots.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

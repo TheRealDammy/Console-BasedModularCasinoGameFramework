@@ -1,86 +1,109 @@
 ﻿#include <iostream>
 #include <Windows.h>
+#include <limits>
 #include "Blackjack.h"
 #include "Poker.h"
+#include "Baccarat.h"
+#include "HighLow.h"
 
-int main()
-{
-    // --- Enable full UTF-8 console support ---
+// Reusable game loop template
+template <typename Game>
+void playGameLoop(Game& game, const std::string& gameName) {
+    char replay;
+    do {
+        system("cls"); // clear console for clean display
+        drawAsciiBox("=== " + gameName + " ===\n");
+        game.play();
+
+        // Loop until user enters valid y/n input
+        while (true) {
+            std::cout << "\nDo you want to play another round of " << gameName << "? (y/n): ";
+            std::cin >> replay;
+
+            if (replay == 'y' || replay == 'Y' || replay == 'n' || replay == 'N') break;
+
+            std::cerr << "[!] ERROR: Invalid input. Please enter 'y' or 'n'.\n";
+        }
+
+        if (replay == 'n' || replay == 'N') {
+            drawAsciiBox("=== Exiting " + gameName + " ===\n");
+            drawAsciiBox("Returning to main menu...\n");
+        }
+
+    } while (replay == 'y' || replay == 'Y');
+}
+
+int main() {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 
-    std::cout << "Welcome to the Casino Text-Based Game!\n";
-    std::cout << "Choose a game to play:\n";
-    std::cout << "1. Blackjack\n";
-    std::cout << "2. Poker\n";
-    std::cout << "Enter the number of your choice: ";
+    char playAnotherGame = 'y';
 
-    int choice;
-    std::cin >> choice;
+    while (playAnotherGame == 'y' || playAnotherGame == 'Y') {
+        system("cls");
+        drawAsciiBox("=== Welcome to the Casino! ===\n");
+        std::cout << "Choose a game to play:\n";
+        std::cout << "1. Blackjack\n2. Poker\n3. Baccarat\n4. High-Low\n5. Exit Casino\n";
 
-    switch (choice) {
-    case 1: {
-        Blackjack blackjackGame;
-        blackjackGame.play();
-        char choice;
-		std::cout << "\nDo you want to play another round of Blackjack? (y/n): ";
-		std::cin >> choice;
-        if (choice == 'y' || choice == 'Y') {
-            while (true) {
-                blackjackGame.play();
-                std::cout << "\nDo you want to play another round of Blackjack? (y/n): ";
-                std::cin >> choice;
-                if (choice != 'y' && choice != 'Y') {
-                    break;
-                }
-            }
-        }
-        else {
-			std::cout << "Exiting Blackjack.\n";
-            std::cout << "Do you want to play a different game? (y/n): ";
-            char choice;
+        int choice;
+
+        // Loop until valid game choice is entered
+        while (true) {
+            std::cout << "Enter the number of your choice: ";
             std::cin >> choice;
-            if (choice == 'y' || choice == 'Y') {
-                main(); // Restart main to choose a different game
+
+            if (std::cin.fail() || choice < 1 || choice > 5) {
+                std::cerr << "[!] ERROR: Invalid input. Enter a number 1-5.\n";
+                std::cin.clear();
             }
-            else break;
+            else {
+                break;
+            }
+        }
+
+        switch (choice) {
+        case 1: {
+            Blackjack blackjackGame;
+            playGameLoop(blackjackGame, "Blackjack");
             break;
         }
-        break;
-    }
-    case 2: {
-        Poker pokerGame;
-        pokerGame.playGame();
-        char choice;
-        std::cout << "\nDo you want to play another hand of poker? (y/n): ";
-        std::cin >> choice;
-        if (choice == 'y' || choice == 'Y') {
+        case 2: {
+            Poker pokerGame;
+            playGameLoop(pokerGame, "Poker");
+            break;
+        }
+        case 3: {
+            Baccarat baccaratGame;
+            playGameLoop(baccaratGame, "Baccarat");
+            break;
+        }
+        case 4: {
+            HighLow highLowGame;
+            playGameLoop(highLowGame, "High-Low");
+            break;
+        }
+        case 5: {
+            drawAsciiBox("=== Exiting Casino ===\n");
+            playAnotherGame = 'n';
+            break;
+        }
+        }
+
+        // Ask to switch games only if not exiting
+        if (playAnotherGame != 'n') {
             while (true) {
-                pokerGame.playGame();
-                std::cout << "\nDo you want to play another hand of poker? (y/n): ";
-                std::cin >> choice;
-                if (choice != 'y' && choice != 'Y') {
-                    break;
-                }
+                std::cout << "Do you want to play a different game? (y/n): ";
+                std::cin >> playAnotherGame;
+
+                if (playAnotherGame == 'y' || playAnotherGame == 'Y' ||
+                    playAnotherGame == 'n' || playAnotherGame == 'N') break;
+
+                std::cerr << "[!] ERROR: Invalid input. Please enter 'y' or 'n'.\n";
+                std::cin.clear();
             }
         }
-        else {
-            std::cout << "Exiting Poker.\n";
-			std::cout << "Do you want to play a different game? (y/n): ";
-			char choice;
-			std::cin >> choice;
-            if (choice == 'y' || choice == 'Y') {
-                main(); // Restart main to choose a different game
-            }
-            else break;
-            break;
-        }
-        break;
     }
-    default:
-        std::cout << "Invalid choice. Exiting the game.\n";
-        break;
-    }
-    std::cout << "Thank you for playing! Goodbye!\n";
+
+    drawAsciiBox("Thank you for playing! Goodbye!\n");
     return 0;
 }

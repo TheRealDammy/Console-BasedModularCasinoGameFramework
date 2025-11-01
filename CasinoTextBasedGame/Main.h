@@ -12,7 +12,7 @@
 //================== Playing Card Definition ==================//
 //------Card class representing a playing card-------//
 class Card {
-public : 
+public:
 	enum Suit { Hearts, Diamonds, Clubs, Spades };
 	enum Rank { Two = 2, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace };
 private:
@@ -122,3 +122,37 @@ public:
 		}
 	}
 };
+
+//================== Utility Functions ==================//
+//------Function to draw an ASCII box around text-------//
+void drawAsciiBox(const std::string& text, int padding = 2) {
+	std::vector<std::string> lines;
+	std::stringstream ss(text);
+	std::string line;
+	size_t maxLength = 0;
+
+	while (getline(ss, line)) {
+		lines.push_back(line);
+		maxLength = (std::max)(maxLength, line.length());
+	}
+
+	int boxWidth = static_cast<int>(maxLength) + padding * 2;
+
+	std::cout << u8"╔";
+	for (int i = 0; i < boxWidth; i++) std::cout << u8"═";
+	std::cout << u8"╗\n";
+
+	for (const auto& l : lines) {
+		std::cout << u8"║";
+		// Compute padding using size_t arithmetic then cast to int explicitly.
+		size_t diff = maxLength - l.length();
+		int half = static_cast<int>(diff / 2);
+		int leftPad = padding + half;
+		int rightPad = boxWidth - static_cast<int>(l.length()) - leftPad;
+		std::cout << std::string(leftPad, ' ') << l << std::string(rightPad, ' ') << u8"║\n";
+	}
+
+	std::cout << u8"╚";
+	for (int i = 0; i < boxWidth; i++) std::cout << u8"═";
+	std::cout << u8"╝\n";
+}
