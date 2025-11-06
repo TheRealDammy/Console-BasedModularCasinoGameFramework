@@ -121,6 +121,10 @@ public:
 			throw std::out_of_range("No more cards in the deck");
 		}
 	}
+	template<typename Pred>
+	Crad findAndRemove(Pred p) {
+		for 
+	}
 };
 
 //================== Utility Functions ==================//
@@ -155,4 +159,175 @@ void drawAsciiBox(const std::string& text, int padding = 2) {
 	std::cout << u8"╚";
 	for (int i = 0; i < boxWidth; i++) std::cout << u8"═";
 	std::cout << u8"╝\n";
+}
+
+//================== Player Definition ==================//
+//-----Player Class-----//
+struct ActiveCurse {
+	std::string name;
+	int remainingRounds;
+};
+
+class Player {
+private:
+	std::string name;
+	double balance = 500.0;
+	double currentBet = 0.0;
+	int mana;
+	const int maxMana;
+	std::vector<ActiveCurse> curses;
+
+public: 
+	Player(std::string nm = "Player", double startBalance = 500.0) : name(std::move(nm)), balance(startBalance), mana(50), maxMana(100) {}
+
+	std::string getName() const {
+		return name;
+	}
+	double getBalance() const {
+		return balance;
+	}
+	int getMana() const {
+		return mana;
+	}
+
+	//betting
+	bool placeBet(double amount) {
+		if (amount <= 0 || amount > balance) {
+			drawAsciiBox("Invalid bet or Insufficient balance.");
+			return false;
+		}
+		balance -= amount;
+		currentBet = amount;
+		return true;
+	}
+	void payWin(double multiplier = 2.0) {
+		balance += static_cast<double>(currentBet) * multiplier; 
+		currentBet = 0;
+	}
+	void refundBet() {
+		balance += currentBet;
+		currentBet = 0;
+	}
+
+	//mana & blessing
+	bool useMana(int cost) {
+		if (mana < cost) return false;
+		mana -= cost;
+		return true;
+	}
+	void regenerateMana(int amount = 5) {
+		mana += amount;
+		if (mana > maxMana) mana = maxMana;
+	}
+	void castBlessing(const std::string& b) {
+		if (b == "Fate's Glimpse") {
+			if (useMana(15)) {
+				fateGlimpse = true;
+				drawAsciiBox("Fate's Glimpse active for this round.");
+			}
+			else drawAsciiBox("Not enough mana for Fate's Glimpse.");
+		}
+		else if (b == "Lucky Draw") {
+			if (useMana(20)) {
+				luckyDraw = true;
+				drawAsciiBox("Lucky Draw active: next card you draw will be 10-valued.");
+			}
+			else drawAsciiBox("Not enough mana for Lucky Draw.");
+		}
+		else if (b == "Mana Shield") {
+			if (useMana(10)) {
+				manaShield = true;
+				drawAsciiBox("Mana Shield Active: Will block one new curse this round.");
+			}
+			else drawAsciiBox("Not enough mana for Mana Shield.");
+		}
+		else {
+			drawAsciiBox("Unknown Blessing.");
+		}
+	}
+	void clearBlessings() {
+		luckyDraw = false;
+		fateGlimpse = false;
+		manaShield = false;
+	}
+
+	//curses : stored by name and remaining rounds
+	void applyCurse(const std::string& curseName, int duration) {
+		if (manaShield) {
+			manaShield = false;
+			drawAsciiBox("Mana Shield absorde the curse:" + curseName);
+			return;
+		}
+		for (auto& c : curses) {
+			if (c.name == curseName) {
+				c.remainingRounds = duration;
+				drawAsciiBox("Curse Refreshed: " + curseName);
+				return;
+			}
+		}
+		curses.push_back({ curseName, duration });
+		drawAsciiBox("You recieved a curse: " + curseName + " for (" + std::to_string(duration) + " rounds)");
+	}
+	bool hasCurse(const std::string& curseName) const {
+		for (auto& c : curses) {
+			if (c.name == curseName && c.remainingRounds > 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+	void decayCurse() {
+		for (auto it = curses.begin(); it != curses.end();) {
+			it->remainingRounds--;
+			if (it->remainingRounds <= 0) {
+				drawAsciiBox("Curse ended: " + it->name);
+				it = curses.erase(it);
+			}
+			else ++it;
+		}
+	}
+
+	void showStatus() const {
+		std::ostringstream oss;
+		oss << "PLAYER STATUS\n";
+		oss << "Name: " << name << "\n";
+		oss << "Balance: £" << balance << "\n";
+		oss << "Mana: " << mana << "/" << maxMana << "\n";
+		if (!curses.empty()) {
+			oss << "Curses:\n";
+			for (auto& c : curses) {
+				oss << " - " << c.name << " (" << c.remainingRounds << ")\n";
+			}
+		}
+		else oss << "Curses: No active curses.\n";
+		oss << "Blessings active:\n";
+		if (luckyDraw) {
+			oss << " - Lucky Draw\n";
+		}
+		if (fateGlimpse) {
+			oss << " - Fate Glimpse\n";
+		}
+		if (manaShield) {
+			oss << " - Mana Shield\n";
+		}
+		if (!luckyDraw && !fateGlimpse && !manaShield) {
+			oss << " - None active";
+			drawAsciiBox(oss.str());
+		}
+	}
+
+	bool luckyDraw = false; // force next card to be valued 10
+	bool fateGlimpse = false; // reavel hidden card/opponent hand
+	bool manaShield = false; // block one curse in a round
+};
+
+//================== Helper Functions ==================//
+//-----Game Helpers for blessings/curses-----//
+
+Card drawCardForPlayer(Deck& deck, Player& player) {
+	if (player.luckyDraw) {
+		Card found = deck.findAndRemove([] const Card & c) {
+			int v = (int)c.rank();
+		}
+	}
 }
