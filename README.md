@@ -58,13 +58,13 @@ betting flow, player state, deck/card utilities, and a central manager to keep l
              |   +-------------+
              |
              v
-  +-------------------------+
-  |     Game Modules        |
-  | Blackjack / Poker / ... |
-  +-----------+-------------+
-              |
-              v
-      +---------------+
-      |  Deck / Card  |
-      +---------------+
+    +-------------------------+
+    |     Game Modules        |
+    | Blackjack / Poker / ... |
+    +-----------+-------------+
+                |
+                v
+        +---------------+
+        |  Deck / Card  |
+        +---------------+
 
