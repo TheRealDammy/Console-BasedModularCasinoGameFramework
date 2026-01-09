@@ -40,3 +40,31 @@ betting flow, player state, deck/card utilities, and a central manager to keep l
   Each mini-game runs its own rules while using shared systems.
 
 ### Tiny architecture diagram
+
+        +----------------------+
+        |   Main / Menu Loop   |
+        +----------+-----------+
+                   |
+                   v
+        +----------------------+
+        |     CasinoManager    |
+        | (bet -> run -> pay)  |
+        +----+----------+------+
+             |          |
+             |          v
+             |   +-------------+
+             |   |   Player    |
+             |   | balance/etc |
+             |   +-------------+
+             |
+             v
+  +-------------------------+
+  |     Game Modules        |
+  | Blackjack / Poker / ... |
+  +-----------+-------------+
+              |
+              v
+      +---------------+
+      |  Deck / Card  |
+      +---------------+
+
