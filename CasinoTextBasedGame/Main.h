@@ -137,11 +137,14 @@ public:
 		return cards[idx++];
 	}
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	template<typename Pred>
 	Crad findAndRemove(Pred p) {
 		for 
 	}
 =======
+=======
+>>>>>>> Stashed changes
 
 	// Search for a card matching predicate among the remaining cards and remove it.
 	// If none found, returns dealCard() as fallback.
@@ -165,6 +168,9 @@ public:
 private:
 	std::vector<Card> cards;
 	size_t idx = 0;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 };
 
@@ -225,9 +231,12 @@ void drawAsciiBox(const std::string& text, int padding = 2) {
 }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 //================== Player Definition ==================//
 //-----Player Class-----//
 =======
+=======
+>>>>>>> Stashed changes
 static std::mt19937& rng() {
 	static std::mt19937 g((unsigned)std::chrono::high_resolution_clock::now().time_since_epoch().count());
 	return g;
@@ -287,11 +296,15 @@ std::string readLineTrimmed(const std::string& prompt = "") {
 
 //================== Player Definition ==================//
 //------Class defining player attributes-------//
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 struct ActiveCurse {
 	std::string name;
 	int remainingRounds;
 };
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 
 class Player {
@@ -337,6 +350,8 @@ public:
 
 	//mana & blessing
 =======
+=======
+>>>>>>> Stashed changes
 class Player {
 public:
 	Player(std::string nm = "Player", double startBalance = 500.0)
@@ -404,6 +419,9 @@ public:
 	}
 
 	// Mana & Blessings (unchanged semantics)
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 	bool useMana(int cost) {
 		if (mana < cost) return false;
@@ -414,6 +432,7 @@ public:
 		mana += amount;
 		if (mana > maxMana) mana = maxMana;
 	}
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 	void castBlessing(const std::string& b) {
 		if (b == "Fate's Glimpse") {
@@ -442,6 +461,8 @@ public:
 		}
 	}
 =======
+=======
+>>>>>>> Stashed changes
 
 	void castBlessing(const std::string& b) {
 		if (b == "Fate's Glimpse") {
@@ -461,6 +482,9 @@ public:
 		}
 	}
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 	void clearBlessings() {
 		luckyDraw = false;
@@ -469,26 +493,37 @@ public:
 	}
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	//curses : stored by name and remaining rounds
 	void applyCurse(const std::string& curseName, int duration) {
 		if (manaShield) {
 			manaShield = false;
 			drawAsciiBox("Mana Shield absorde the curse:" + curseName);
 =======
+=======
+>>>>>>> Stashed changes
 	// Curses: store by name + remaining rounds
 	void applyCurse(const std::string& curseName, int duration) {
 		if (manaShield) {
 			// negate one curse application
 			manaShield = false;
 			drawAsciiBox("Mana Shield absorbed the curse: " + curseName);
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 			return;
 		}
 		for (auto& c : curses) {
 			if (c.name == curseName) {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 				c.remainingRounds = duration;
 				drawAsciiBox("Curse Refreshed: " + curseName);
+=======
+				c.remainingRounds = duration; // refresh
+				drawAsciiBox("Curse refreshed: " + curseName);
+>>>>>>> Stashed changes
 =======
 				c.remainingRounds = duration; // refresh
 				drawAsciiBox("Curse refreshed: " + curseName);
@@ -497,6 +532,7 @@ public:
 			}
 		}
 		curses.push_back({ curseName, duration });
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 		drawAsciiBox("You recieved a curse: " + curseName + " for (" + std::to_string(duration) + " rounds)");
 	}
@@ -510,6 +546,8 @@ public:
 	}
 	void decayCurse() {
 =======
+=======
+>>>>>>> Stashed changes
 		drawAsciiBox("You received a curse: " + curseName + " (" + std::to_string(duration) + " rounds)");
 	}
 
@@ -520,6 +558,9 @@ public:
 
 	// Decrement curse durations after each round
 	void decayCurses() {
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 		for (auto it = curses.begin(); it != curses.end();) {
 			it->remainingRounds--;
@@ -535,6 +576,7 @@ public:
 		std::ostringstream oss;
 		oss << "PLAYER STATUS\n";
 		oss << "Name: " << name << "\n";
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 		oss << "Balance: £" << balance << "\n";
 		oss << "Mana: " << mana << "/" << maxMana << "\n";
@@ -576,6 +618,8 @@ Card drawCardForPlayer(Deck& deck, Player& player) {
 		}
 	}
 =======
+=======
+>>>>>>> Stashed changes
 		oss << u8"Balance: £" << balance << "\n";
 		oss << u8"Current Bet: £" << currentBet << "\n";
 		oss << "Mana: " << mana << "/" << maxMana << "\n";
@@ -704,5 +748,8 @@ void maybeApplyRandomCurseAfterLoss(Player& player) {
 void showRoundSummary(const Player& player) {
 	// player.showStatus already composes and draws a boxed status
 	player.showStatus();
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 }
