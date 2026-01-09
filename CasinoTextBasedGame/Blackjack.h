@@ -75,29 +75,46 @@ private:
     Deck deck;
     Hand playerHand;
     Hand dealerHand;
-
+    double currentBet = 0;
+    Player* playerRef = nullptr;
+    CasinoManager* casinoRef = nullptr;
+    bool revealDealerCard = false;
+    bool forceTenNext = false;
+    bool negateNextCurse = false;
 public:
     void startNewRound() {
         playerHand.clear();
         dealerHand.clear();
         deck.shuffle();
-        playerHand.addCard(deck.dealCard());
-        dealerHand.addCard(deck.dealCard());
-        playerHand.addCard(deck.dealCard());
-        dealerHand.addCard(deck.dealCard());
+
+        Player& p = *playerRef;
+		CasinoManager& casino = *casinoRef;
+
+        // Deal opening cards
+        playerHand.addCard(dealCardWithFantasy());
+        dealerHand.addCard(dealCardWithFantasy());
+        playerHand.addCard(dealCardWithFantasy());
+        dealerHand.addCard(dealCardWithFantasy());
+        offerBlessings();
+
+        // ----- Betting -----
+        currentBet;
+        casino.placeBet(currentBet);
     }
 
-    void play() {
-        drawAsciiBox("=== Welcome to Blackjack! ===\n");
+    void play(Player &player, CasinoManager &casino) {
+        playerRef = &player;
+		casinoRef = &casino;
 
         startNewRound();
+        
 
         // Player turn
         playerTurn();
         if (playerHand.isBust()) {
             showHands(false);
             drawAsciiBox("Player busts! Dealer wins!\n");
-            return;
+            return finalizeRound(false);
         }
 
         // Dealer turn
@@ -105,64 +122,67 @@ public:
         if (dealerHand.isBust()) {
             showHands(false);
             drawAsciiBox("Dealer busts! Player wins!\n");
-            return;
+            return finalizeRound(true);
         }
+
+        showHands(false);
+        int pv = playerHand.getValue();
+        int dv = dealerHand.getValue();
+
+        if (pv > dv) finalizeRound(true);
+        else if (pv < dv) finalizeRound(false);
+        else finalizeRound(false, true);
 
         // Show final hands and determine winner
         showHands(false);
-        determineWinner();
-    }
-
-    // ------------------ Wallet Integration ------------------
-    bool playWithBet(int bet) {
-        startNewRound();
-
-        // Player turn
-        playerTurn();
-        if (playerHand.isBust()) {
-            showHands(false);
-            drawAsciiBox("Player busts! Dealer wins!\n");
-            return false; // player lost
-        }
-
-        // Dealer turn
-        dealerTurn();
-        if (dealerHand.isBust()) {
-            showHands(false);
-            drawAsciiBox("Dealer busts! Player wins!\n");
-            return true; // player won
-        }
-
-        // Final comparison
-        int playerValue = playerHand.getValue();
-        int dealerValue = dealerHand.getValue();
-
-        showHands(false);
-
-        if (playerValue > dealerValue) {
-            drawAsciiBox("Player wins with " + std::to_string(playerValue) + " against dealer's " + std::to_string(dealerValue) + "!\n");
-            return true;
-        }
-        else if (playerValue < dealerValue) {
-            drawAsciiBox("Dealer wins with " + std::to_string(dealerValue) + " against player's " + std::to_string(playerValue) + "!\n");
-            return false;
-        }
-        else {
-            drawAsciiBox("It's a push! Both player and dealer have " + std::to_string(playerValue) + "!\n");
-            return false; // tie treated as no coins lost, can adjust if needed
-        }
     }
 
 private:
-    void showHands(bool hideDealerFirstCard) const {
-        std::cout << "\nDealer's Hand:\n";
-        dealerHand.displayHand(hideDealerFirstCard);
-        if (!hideDealerFirstCard) {
-            std::cout << "Dealer's Hand Value: " << dealerHand.getValue() << "\n";
+    void offerBlessings() {
+        Player& p = *playerRef;
+
+        std::cout << "\nWould you like to use a Blessing?\n";
+        std::cout << "1. Fate's Glimpse (15 mana)\n";
+        std::cout << "2. Lucky Draw   (20 mana)\n";
+        std::cout << "3. Mana Shield  (10 mana)\n";
+        std::cout << "4. None\n> ";
+
+        int c;
+        std::cin >> c;
+
+        switch (c) {
+        case 1: p.castBlessing("Fate's Glimpse"); break;
+        case 2: p.castBlessing("Lucky Draw"); break;
+        case 3: p.castBlessing("Mana Shield"); break;
         }
+    }
+    Card dealCardWithFantasy() {
+        Player& p = *playerRef;
+
+        // handle Lucky Draw
+        if (shouldForceTen()) {
+            p.clearBlessings();
+            return Card(Card::Ten, (Card::Suit)(rand() % 4));
+        }
+
+        return deck.dealCard();
+    }
+    void showHands(bool hideDealerFirstCard) const {
+        Player& p = *playerRef;
+
+        std::cout << "\nDealer's Hand:\n";
+
+        if (shouldRevealDealer() == true)
+            hideDealerFirstCard = false;
+
+        dealerHand.displayHand(hideDealerFirstCard);
+
+        if (!hideDealerFirstCard)
+            std::cout << "Value: " << dealerHand.getValue() << "\n";
+
         std::cout << "\nPlayer's Hand:\n";
         playerHand.displayHand();
-        std::cout << "Player's Hand Value: " << playerHand.getValue() << "\n";
+        std::cout << "Value: " << playerHand.getValue() << "\n";
     }
 
     void playerTurn() {
@@ -208,17 +228,33 @@ private:
         }
     }
 
-    void determineWinner() const {
-        int playerValue = playerHand.getValue();
-        int dealerValue = dealerHand.getValue();
-        if (playerValue > dealerValue) {
-            drawAsciiBox("Player wins with " + std::to_string(playerValue) + " against dealer's " + std::to_string(dealerValue) + "!\n");
+    void finalizeRound(bool playerWon, bool push = false) {
+        Player& p = *playerRef;
+		CasinoManager& casino = *casinoRef;
+
+        if (push) {
+            drawAsciiBox("Push! You get your bet back.");
+            casino.processWin(currentBet);
         }
-        else if (playerValue < dealerValue) {
-            drawAsciiBox("Dealer wins with " + std::to_string(dealerValue) + " against player's " + std::to_string(playerValue) + "!\n");
+        else if (playerWon) {
+            drawAsciiBox("You win!");
+			casino.processWin(currentBet, 2);
         }
         else {
-            drawAsciiBox("It's a push! Both player and dealer have " + std::to_string(playerValue) + "!\n");
+            drawAsciiBox("You lose...");
+            // chance to receive a curse
+            if (rand() % 100 < 35) {
+                p.applyCurse("Muddled Sight", 2);
+                drawAsciiBox("A dark curse afflicts you: Muddled Sight!");
+            }
+			casino.processLoss(currentBet);
         }
+
+        p.regenerateMana();
+        p.clearBlessings();
+        p.decayCurses();
     }
+    bool shouldRevealDealer() const { return revealDealerCard; }
+    bool shouldForceTen() const { return forceTenNext; }
+    bool shouldNegateCurse() const { return negateNextCurse; }
 };

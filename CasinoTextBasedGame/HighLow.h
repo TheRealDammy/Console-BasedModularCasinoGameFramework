@@ -1,83 +1,80 @@
 ﻿#pragma once
 #include "Main.h"
 
-//================== Game Definition ==================//
-//------game class representing the games logic-------//
+// High/Low - draw one card, player guesses higher or lower
 class HighLow {
 private:
-    Deck deck;
-    std::vector<Card> currentCard;
-    std::vector<Card> nextCard;
+	Deck deck;
 
-    int rankValue(const Card& c) const {
-        return static_cast<int>(c.getRank());
-    }
-
-    
+	void displayCardOne(const Card& c) const {
+		auto art = c.displayCard();
+		for (auto& L : art) std::cout << L << "\n";
+	}
 
 public:
-    void displayCards(const std::vector<Card>& cards, bool hideFirst = false) const {
-        std::vector<std::vector<std::string>> cardArts;
-        for (size_t i = 0; i < cards.size(); ++i) {
-            if (i == 0 && hideFirst)
-                cardArts.push_back(Card::hiddenCard());
-            else
-                cardArts.push_back(cards[i].displayCard());
-        }
-        for (int line = 0; line < 7; ++line) {
-            for (size_t i = 0; i < cardArts.size(); ++i)
-                std::cout << cardArts[i][line] << " ";
-            std::cout << "\n";
-        }
-    }
+	void play(Player& player, CasinoManager &casino) {
+		drawAsciiBox("=== High / Low ===");
 
-    void play() {
-		drawAsciiBox("=== Welcome to High-Low! ===\n");
-        deck.shuffle();
+		player.showStatus();
 
-        Card current = deck.dealCard();
-        currentCard = { current };
-		int score = 0;
+		// Blessings prompt
+		std::string cast = readLineTrimmed("Cast a Blessing before this round? (y/n) ");
+		if (!cast.empty() && (cast[0] == 'y' || cast[0] == 'Y')) {
+			std::cout << "1 Fate's Glimpse (15)\n2 Lucky Draw (20)\n3 Mana Shield (10)\n0 Skip\n";
+			int pick = readInt("Choose: ", 0, 3);
+			if (pick == 1) player.castBlessing("Fate's Glimpse");
+			else if (pick == 2) player.castBlessing("Lucky Draw");
+			else if (pick == 3) player.castBlessing("Mana Shield");
+		}
 
-		bool isGameOver = false;
+		// Place bet
+		double bet;
+		if (!casino.placeBet(bet)) { pauseEnter(); return; }
 
-        while (!isGameOver) {
-            deck.shuffle();
-            std::cout << "Current card:\n";
-            displayCards(currentCard);
+		deck.shuffle();
 
-            std::string guess;
-            std::cout << "\nWill the next card be (H)igher or (L)ower? ";
-            std::cin >> guess;
+		Card current = deck.dealCard();
+		std::cout << "\nCurrent card:\n";
+		displayCardOne(current);
 
-            
-            Card next = deck.dealCard();
-            nextCard = { next };
+		// player choice H/L
+		std::string choice = readLineTrimmed("Will the next card be (H)igher or (L)ower? ");
+		if (choice.empty()) { drawAsciiBox("No choice — round aborted."); player.refundCurrentBet(); pauseEnter(); return; }
+		char ch = std::toupper(choice[0]);
 
-            std::cout << "\nNext card:\n";
-            displayCards(nextCard);
+		// Muddled Sight can flip the choice
+		if (player.hasCurse("Muddled Sight") && randint(1, 100) <= 20) {
+			drawAsciiBox("Muddled Sight flips your choice!");
+			ch = (ch == 'H') ? 'L' : 'H';
+		}
 
-            int cVal = rankValue(current);
-            int nVal = rankValue(next);
+		// Next card uses drawCardForPlayer (Lucky Draw interacts)
+		Card next = drawCardForPlayer(deck, player);
 
-            bool correct = false;
-            if ((guess == "H" || guess == "h" || guess == "higher" || guess == "high") && nVal > cVal) correct = true;
-            if ((guess == "L" || guess == "l" || guess == "lower" || guess == "low") && nVal < cVal) correct = true;
+		std::cout << "\nNext card:\n";
+		displayCardOne(next);
 
-            if (nVal == cVal)
-                drawAsciiBox(" It's a tie! No one wins.\n");
-            else if (correct) {
-                drawAsciiBox(" Correct guess! You win!\n");
-				score++;
-				current = next;
-				currentCard = { current };
-            }
-            else {
-                drawAsciiBox(" Wrong guess! You lose.\n");
-                isGameOver = true;
-            }
-        }
-        drawAsciiBox("Your final score: " + std::to_string(score) + "\n");
-    }
+		int vcur = static_cast<int>(current.getRank());
+		int vnext = static_cast<int>(next.getRank());
 
+		if (vnext == vcur) {
+			drawAsciiBox("Tie — bet returned.");
+			player.refundCurrentBet();
+		}
+		else if ((vnext > vcur && ch == 'H') || (vnext < vcur && ch == 'L')) {
+			drawAsciiBox("You win!");
+			casino.processWin(bet, 2.0);
+		}
+		else {
+			drawAsciiBox("You lose.");
+			maybeApplyRandomCurseAfterLoss(player);
+			casino.processLoss(bet);
+		}
+
+		player.regenerateMana();
+		player.decayCurses();
+		player.clearBlessings();
+		pauseEnter();
+		showRoundSummary(player);
+	}
 };
